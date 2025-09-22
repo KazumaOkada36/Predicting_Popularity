@@ -4,6 +4,7 @@ import os
 from typing import Dict, Optional
 from textblob import TextBlob
 import numpy as np
+import pandas as pd
 
 class RestaurantDataProcessor:
     """
@@ -16,7 +17,7 @@ class RestaurantDataProcessor:
         
         # API Endpoints
         self.places_base_url = "https://maps.googleapis.com/maps/api/place"
-        
+      
     def search_restaurant(self, restaurant_name: str, location: str) -> Dict:
         """
         Get real restaurant data from Google Places API only
@@ -127,6 +128,41 @@ class RestaurantDataProcessor:
         
         return processed
     
+    def generate_training_data(self, num_samples: int = 1000) -> pd.DataFrame:
+     #Generate realistic training data for restaurant popularity prediction 
+        np.random.seed(42)
+    
+        print(f"Generating {num_samples} training samples...")
+    
+        data = []
+        for i in range(num_samples):
+        # Generate realistic restaurant features
+            avg_rating = np.random.normal(4.0, 0.8)
+            avg_rating = np.clip(avg_rating, 1.0, 5.0)
+        
+            total_reviews = np.random.exponential(100)
+            total_reviews = int(np.clip(total_reviews, 5, 5000))
+        
+            price_level = np.random.choice([1, 2, 3, 4], p=[0.3, 0.4, 0.2, 0.1])
+        
+        # Simple popularity calculation
+            popularity = (avg_rating - 1) * 2 + np.log10(total_reviews + 1) * 0.5
+            popularity = np.clip(popularity + np.random.normal(0, 0.5), 0, 10)
+
+            data.append({
+                'avg_rating': round(avg_rating, 1),
+                'total_reviews': total_reviews,
+                'price_level': price_level,
+                'popularity_score': round(popularity, 1)
+            })
+        
+            if i % 100 == 0:
+                print(f"Generated {i} samples...")
+        
+        df = pd.DataFrame(data)
+        print(f"Training data generated! Shape: {df.shape}")
+        return df
+
     def _estimate_additional_features(self, google_data: Dict) -> Dict:
         """
         Estimate features we don't get directly from Google Places
